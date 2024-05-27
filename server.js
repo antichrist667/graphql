@@ -82,5 +82,5 @@ app.use('/graphql', graphqlHTTP({
   graphiql: true, // Habilita la interfaz GraphiQL
 }));
 
-app.listen(4000, () => console.log('Servidor GraphQL corriendo en http://localhost:4000/graphql'));
-                
+const PORT = process.env.PORT || 4000;
+app.listen(PORT, () => console.log(`Servidor GraphQL corriendo en http://localhost:${PORT}/graphql`));                
