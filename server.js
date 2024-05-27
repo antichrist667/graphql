@@ -76,6 +76,11 @@ const root = {
 
 // Configurar el servidor Express
 const app = express();
+
+app.get('/', (req, res) => {
+  res.send('Bienvenido al servidor GraphQL. Ve a /graphql para usar la API.');
+});
+
 app.use('/graphql', graphqlHTTP({
   schema: schema,
   rootValue: root,
