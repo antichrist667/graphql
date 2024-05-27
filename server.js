@@ -1,6 +1,7 @@
 const express = require('express');
 const { graphqlHTTP } = require('express-graphql');
 const { buildSchema } = require('graphql');
+const { pool } = require('./db');
 
 // Define el esquema de GraphQL
 const schema = buildSchema(`
@@ -23,60 +24,57 @@ const schema = buildSchema(`
   }
 `);
 
-// Datos simulados
-let usersData = [
-  { id: 1, name: 'Alice', age: 25 },
-  { id: 2, name: 'Bob', age: 30 },
-  { id: 3, name: 'Charlie', age: 35 },
-];
-
-// Funciones auxiliares para manejar los datos
-const addUser = ({ name, age }) => {
-  const newUser = {
-    id: usersData.length + 1,
-    name,
-    age,
-  };
-  usersData.push(newUser);
-  return newUser;
-};
-
-const updateUser = ({ id, name, age }) => {
-  const userIndex = usersData.findIndex(user => user.id === id);
-  if (userIndex === -1) {
-    console.log(`User with id ${id} not found`);
-    return null;
-  }
-
-  const updatedUser = {
-    ...usersData[userIndex],
-    name: name !== undefined ? name : usersData[userIndex].name,
-    age: age !== undefined ? age : usersData[userIndex].age,
-  };
-  usersData[userIndex] = updatedUser;
-  return updatedUser;
-};
-
-const deleteUser = ({ id }) => {
-  const userIndex = usersData.findIndex(user => user.id === id);
-  if (userIndex === -1) return null;
-
-  const deletedUser = usersData[userIndex];
-  usersData = usersData.filter(user => user.id !== id);
-  return deletedUser;
-};
-
-// Define las funciones resolutoras
+// Funciones resolutoras
 const root = {
   hello: () => 'Hello, world!',
-  user: ({ id }) => usersData.find(user => user.id === id),
-  users: () => usersData,
-  addUser,
-  updateUser,
-  deleteUser,
+  user: async ({ id }) => {
+    const client = await pool.connect();
+    try {
+      const result = await client.query('SELECT * FROM users WHERE id = $1', [id]);
+      return result.rows[0];
+    } finally {
+      client.release();
+    }
+  },
+  users: async () => {
+    const client = await pool.connect();
+    try {
+      const result = await client.query('SELECT * FROM users');
+      return result.rows;
+    } finally {
+      client.release();
+    }
+  },
+  addUser: async ({ name, age }) => {
+    const client = await pool.connect();
+    try {
+      const result = await client.query('INSERT INTO users (name, age) VALUES ($1, $2) RETURNING *', [name, age]);
+      return result.rows[0];
+    } finally {
+      client.release();
+    }
+  },
+  updateUser: async ({ id, name, age }) => {
+    const client = await pool.connect();
+    try {
+      const result = await client.query('UPDATE users SET name = $1, age = $2 WHERE id = $3 RETURNING *', [name, age, id]);
+      return result.rows[0];
+    } finally {
+      client.release();
+    }
+  },
+  deleteUser: async ({ id }) => {
+    const client = await pool.connect();
+    try {
+      const result = await client.query('DELETE FROM users WHERE id = $1 RETURNING *', [id]);
+      return result.rows[0];
+    } finally {
+      client.release();
+    }
+  },
 };
 
-// Configura el servidor Express
+// Configurar el servidor Express
 const app = express();
 app.use('/graphql', graphqlHTTP({
   schema: schema,
@@ -85,3 +83,4 @@ app.use('/graphql', graphqlHTTP({
 }));
 
 app.listen(4000, () => console.log('Servidor GraphQL corriendo en http://localhost:4000/graphql'));
+                
