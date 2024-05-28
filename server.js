@@ -2,6 +2,7 @@ const express = require('express');
 const { graphqlHTTP } = require('express-graphql');
 const { buildSchema } = require('graphql');
 const { pool } = require('./db');
+const path = require('path');
 
 // Define el esquema de GraphQL
 const schema = buildSchema(`
@@ -77,15 +78,20 @@ const root = {
 // Configurar el servidor Express
 const app = express();
 
-app.get('/', (req, res) => {
-  res.send('Bienvenido al servidor GraphQL. Ve a /graphql para usar la API.');
-});
+// Middleware para servir archivos estáticos
+app.use(express.static(path.join(__dirname, 'public')));
 
+// Ruta para GraphiQL (opcional)
 app.use('/graphql', graphqlHTTP({
   schema: schema,
   rootValue: root,
   graphiql: true, // Habilita la interfaz GraphiQL
 }));
 
+// Ruta para la página principal (index.html)
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`Servidor GraphQL corriendo en http://localhost:${PORT}/graphql`));                
+app.listen(PORT, () => console.log(`Servidor corriendo en http://localhost:${PORT}/`));

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GraphQL Client</title>
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <h1 class="mt-5">Consulta y Registro</h1>
+    
+    <!-- Formulario para obtener usuario por ID -->
+    <div class="mt-4">
+      <h3>Get User by ID</h3>
+      <form id="getUserForm">
+        <div class="form-group">
+          <label for="userId">User ID</label>
+          <input type="text" class="form-control" id="userId" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Get User</button>
+      </form>
+      <div class="mt-3">
+        <pre id="getUserResult"></pre>
+      </div>
+    </div>
+
+    <!-- Formulario para agregar usuario -->
+    <div class="mt-4">
+      <h3>Add User</h3>
+      <form id="addUserForm">
+        <div class="form-group">
+          <label for="userName">Name</label>
+          <input type="text" class="form-control" id="userName" required>
+        </div>
+        <div class="form-group">
+          <label for="userAge">Age</label>
+          <input type="number" class="form-control" id="userAge" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Add User</button>
+      </form>
+      <div class="mt-3">
+        <pre id="addUserResult"></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Script para realizar consultas y mutaciones -->
+  <script>
+    async function fetchGraphQL(query, variables) {
+      const response = await fetch('http://localhost:4000/graphql', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ query, variables })
+      });
+      return response.json();
+    }
+
+    // Event listener para obtener usuario por ID
+    document.getElementById('getUserForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const userId = document.getElementById('userId').value;
+      const query = `
+        query($id: Int!) {
+          user(id: $id) {
+            id
+            name
+            age
+          }
+        }
+      `;
+      const variables = { id: parseInt(userId) };
+      const result = await fetchGraphQL(query, variables);
+      document.getElementById('getUserResult').textContent = JSON.stringify(result, null, 2);
+    });
+
+    // Event listener para agregar usuario
+    document.getElementById('addUserForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const userName = document.getElementById('userName').value;
+      const userAge = parseInt(document.getElementById('userAge').value, 10);
+      const mutation = `
+        mutation($name: String!, $age: Int!) {
+          addUser(name: $name, age: $age) {
+            id
+            name
+            age
+          }
+        }
+      `;
+      const variables = { name: userName, age: userAge };
+      const result = await fetchGraphQL(mutation, variables);
+      document.getElementById('addUserResult').textContent = JSON.stringify(result, null, 2);
+    });
+  </script>
+</body>
+</html>
