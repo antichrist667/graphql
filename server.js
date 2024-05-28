@@ -86,6 +86,7 @@ app.use('/graphql', graphqlHTTP({
   schema: schema,
   rootValue: root,
   graphiql: true, // Habilita la interfaz GraphiQL
+  proxy: true,
 }));
 
 // Ruta para la página principal (index.html)
